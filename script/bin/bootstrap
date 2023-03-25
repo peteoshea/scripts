@@ -37,10 +37,17 @@ function update_packages {
 
   case $package_manager in
     apt)
-      output_message "Updating apt packages…"
+      output_message "Updating apt package lists…"
       sudo apt update
+      output_message "Updating apt packages…"
       sudo apt -y upgrade
+      output_message "Removing unused apt packages…"
       sudo apt -y auto-remove
+      output_message "Checking of new Ubuntu release…"
+      # Temporarily disable exit on error as this command will fail if there is no new release
+      set +e
+      sudo do-release-upgrade
+      set -e
       ;;
     yum)
       output_message "Updating yum packages…"
@@ -53,7 +60,6 @@ function update_packages {
 function install_apt_packages {
   if [[ -f apt-packages ]]
   then
-    update_packages
     output_message "Installing apt packages…"
     # We need word splitting to install multiple packages on a single line
     # shellcheck disable=SC2046
@@ -64,7 +70,6 @@ function install_apt_packages {
 function install_yum_packages {
   if [[ -f yum-packages ]]
   then
-    update_packages
     output_message "Installing yum packages…"
     # We need word splitting to install multiple packages on a single line
     # shellcheck disable=SC2046
@@ -73,6 +78,7 @@ function install_yum_packages {
 }
 
 function install_linux_packages {
+  update_packages
   case $package_manager in
     apt)
       install_apt_packages
@@ -130,48 +136,49 @@ else
   exit 1
 fi
 
+# Ensure Homebrew is installed
+if command -v brew > /dev/null
+then
+  output_message "Updating Homebrew…"
+  brew update
+else
+  output_message "Installing Homebrew…"
+  bash <(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
+
+  if [[ $is_linux = true ]]
+  then
+    # Install recommended packages
+    update_packages
+    case $package_manager in
+      apt)
+        sudo apt -y install build-essential
+        ;;
+      yum)
+        sudo yum -y groupinstall 'Development Tools'
+        ;;
+    esac
+
+    # Add Homebrew environment variables to current shell
+    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+    # Add Homebrew environment variables to local users profile
+    {
+      echo
+      echo "# Homebrew environment variables"
+      /home/linuxbrew/.linuxbrew/bin/brew shellenv
+    } >> "$HOME/.bashrc"
+  elif [[ $is_mac = true ]]
+  then
+    echo "TODO - automatic install of Homebrew on a Mac???"
+  fi
+
+  # Install gcc as recommended in the next steps
+  brew install gcc
+fi
+
 # If Brewfile exists then make sure dependencies are all installed and up to date
 if [[ -f Brewfile ]]
 then
-  if command -v brew > /dev/null
-  then
-    output_message "Updating Homebrew…"
-    brew update
-  else
-    output_message "Installing Homebrew…"
-    bash <(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
-
-    if [[ $is_linux = true ]]
-    then
-      # Install recommended packages
-      update_packages
-      case $package_manager in
-        apt)
-          sudo apt -y install build-essential
-          ;;
-        yum)
-          sudo yum -y groupinstall 'Development Tools'
-          ;;
-      esac
-
-      # Add Homebrew environment variables to current shell
-      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-
-      # Add Homebrew environment variables to local users profile
-      {
-        echo
-        echo "# Homebrew environment variables"
-        /home/linuxbrew/.linuxbrew/bin/brew shellenv
-      } >> "$HOME/.bashrc"
-    elif [[ $is_mac = true ]]
-    then
-      echo "TODO - automatic install of Homebrew on a Mac???"
-    fi
-
-    # Install gcc as recommended in the next steps
-    brew install gcc
-  fi
-
   if brew bundle check > /dev/null 2>&1
   then
     echo "Homebrew dependencies are up to date"
@@ -180,3 +187,6 @@ then
     brew bundle
   fi
 fi
+
+# Update all homebrew packages
+brew upgrade

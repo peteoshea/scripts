@@ -1,0 +1,12 @@
+#!/bin/bash
+
+echo
+echo "==> Updating homebrew…"
+echo
+brew update
+
+echo
+echo "==> Updating homebrew packages…"
+echo
+brew upgrade
+

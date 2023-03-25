@@ -1,0 +1,22 @@
+#!/bin/bash
+
+echo
+echo "==> Updating linux package lists…"
+echo
+sudo apt update
+
+echo
+echo "==> Updating linux packages…"
+echo
+sudo apt -y upgrade
+
+echo
+echo "==> Removing unused linux packages…"
+echo
+sudo apt -y auto-remove
+
+echo
+echo "==> Checking for updated linux version…"
+echo
+sudo do-release-upgrade
+
