@@ -1,0 +1,53 @@
+#!/bin/bash
+
+# Track how many issues found during analysis
+issues=0
+function check_script {
+  script=$1
+  echo "====> Checking: $script"
+  shellcheck "$script"
+  issues=$((issues + $?))
+}
+
+# Check if arguments are passed allowing call to specific test(s).
+# As an example this calls a simple script to check these shell scripts are valid.
+echo
+if [[ -n $1 ]]
+then
+  echo "===> Analysing specific scripts…"
+  for arg
+  do
+    check_script "$arg"
+  done
+else
+  echo "===> Analysing all scripts…"
+
+  # Ensure we are working from the top of the project
+  cd "$(dirname "$0")/../.." || exit
+  echo "Change directory to: $(pwd)"
+
+  # Find all regular files, excluding certain folders, that contain shebang as shell script then
+  # redirect that list into a while loop to process each one individually.
+  while read -r -d '' script_file
+  do
+    check_script "${script_file}"
+  done < <(find . \
+    -path './.git' -prune -o \
+    -type f \
+    -exec grep -qE '^#!(.*\/|.*\/env +)(sh|bash|ksh)' {} \; -print0)
+fi
+
+echo
+echo -n "===> "
+if [[ $issues = 0 ]]
+then
+  echo "All scripts look fine!"
+elif [[ $issues = 1 ]]
+then
+  echo "$issues issue found in scripts"
+  echo
+else
+  echo "$issues issues found in scripts"
+  echo
+fi
+exit $issues

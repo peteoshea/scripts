@@ -1,0 +1,182 @@
+#!/bin/bash
+
+# bootstrap: Script to resolve all dependencies that the application requires to run.
+#
+
+# Drop out if one of the commands fails
+set -e
+
+# Common function to output important messages
+function output_message {
+  message=$1
+  if [[ -z $message ]]
+  then
+    echo "output_message called without a message?"
+    exit
+  fi
+
+  echo
+  echo "==> $message"
+}
+
+output_message "Bootstrapping dependencies…"
+
+# Ensure we are working from the top of the project
+cd "$(dirname "$0")/../.."
+echo "Change directory to: $(pwd)"
+
+# Install linux distro specific packages
+package_manager=unknown
+packages_updated=false
+
+function update_packages {
+  if [[ $packages_updated = true ]]
+  then
+    return
+  fi
+
+  case $package_manager in
+    apt)
+      output_message "Updating apt packages…"
+      sudo apt update
+      sudo apt -y upgrade
+      sudo apt -y auto-remove
+      ;;
+    yum)
+      output_message "Updating yum packages…"
+      sudo yum update
+      ;;
+  esac
+  packages_updated=true
+}
+
+function install_apt_packages {
+  if [[ -f apt-packages ]]
+  then
+    update_packages
+    output_message "Installing apt packages…"
+    # We need word splitting to install multiple packages on a single line
+    # shellcheck disable=SC2046
+    sudo apt -y install $(< apt-packages)
+  fi
+}
+
+function install_yum_packages {
+  if [[ -f yum-packages ]]
+  then
+    update_packages
+    output_message "Installing yum packages…"
+    # We need word splitting to install multiple packages on a single line
+    # shellcheck disable=SC2046
+    sudo yum -y install $(< yum-packages)
+  fi
+}
+
+function install_linux_packages {
+  case $package_manager in
+    apt)
+      install_apt_packages
+      ;;
+    yum)
+      install_yum_packages
+      ;;
+    *)
+      echo "Not sure which package manager this distro uses so cannot install packages"
+      ;;
+  esac
+}
+
+# Check whether this is Windows Subsystem for Linux
+is_wsl=false
+if uname -a | grep -q "icrosoft"
+then
+  is_wsl=true
+fi
+
+# Work out what type of OS we are running on
+is_linux=false
+is_mac=false
+if [[ $(uname -s) = "Linux" ]]
+then
+  echo "This appears to be a Linux based system"
+  is_linux=true
+
+  # shellcheck disable=SC1091
+  . /etc/os-release
+
+  distro=$ID
+  echo -n "Current distro is: $distro"
+  if [[ $is_wsl = true ]]
+  then
+    echo -n " (WSL)"
+  fi
+  echo
+
+  case $distro in
+    centos | rhel | fedora)
+      package_manager=yum
+      ;;
+    ubuntu | debian)
+      package_manager=apt
+      ;;
+  esac
+  install_linux_packages
+elif [[ $(uname -s) = "Darwin" ]]
+then
+  echo "This appears to be a Mac"
+  is_mac=true
+else
+  echo "This script only runs on Linux or Mac systems"
+  exit 1
+fi
+
+# If Brewfile exists then make sure dependencies are all installed and up to date
+if [[ -f Brewfile ]]
+then
+  if command -v brew > /dev/null
+  then
+    output_message "Updating Homebrew…"
+    brew update
+  else
+    output_message "Installing Homebrew…"
+    bash <(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)
+
+    if [[ $is_linux = true ]]
+    then
+      # Install recommended packages
+      update_packages
+      case $package_manager in
+        apt)
+          sudo apt -y install build-essential
+          ;;
+        yum)
+          sudo yum -y groupinstall 'Development Tools'
+          ;;
+      esac
+
+      # Add Homebrew environment variables to current shell
+      eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+      # Add Homebrew environment variables to local users profile
+      {
+        echo
+        echo "# Homebrew environment variables"
+        /home/linuxbrew/.linuxbrew/bin/brew shellenv
+      } >> "$HOME/.bashrc"
+    elif [[ $is_mac = true ]]
+    then
+      echo "TODO - automatic install of Homebrew on a Mac???"
+    fi
+
+    # Install gcc as recommended in the next steps
+    brew install gcc
+  fi
+
+  if brew bundle check > /dev/null 2>&1
+  then
+    echo "Homebrew dependencies are up to date"
+  else
+    output_message "Installing Homebrew dependencies…"
+    brew bundle
+  fi
+fi

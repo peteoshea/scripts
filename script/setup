@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# setup: Set up application for the first time after cloning, or set it back to the initial state.
+#
+
+# Drop out if one of the commands fails
+set -e
+
+echo
+echo "==> Running initial setup for this project…"
+
+# Ensure we are working from the top of the project
+cd "$(dirname "$0")/.."
+echo "Change directory to: $(pwd)"
+
+# Run bootstrap script to resolve dependencies
+script/bin/bootstrap
+
+# Reset database to a fresh state
+# echo
+# echo "==> Setting up DB…"
+# echo
+
+echo
+echo "==> You are now ready to go!"
+echo

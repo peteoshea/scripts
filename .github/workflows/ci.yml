@@ -1,0 +1,28 @@
+name: CI
+on: [push]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project source
+        uses: actions/checkout@v3.3.0
+
+      - name: Run the bash test script
+        run: script/test
+
+      - name: Cache PowerShell modules
+        id: cache-powershell-modules
+        uses: actions/cache@v3.3.1
+        with:
+          path: ~/.local/share/powershell/Modules
+          # Include a date as a manual cache buster if you want to install newer module versions
+          key: ${{runner.os}}-powershell-modules-2023-03-25
+
+      - name: Install powershell script analyser
+        if: steps.cache-powershell-modules.outputs.cache-hit != 'true'
+        run: Install-Module -Name PSScriptAnalyzer -Force
+        shell: pwsh
+
+      - name: Run the powershell test script
+        run: script/test.ps1
+        shell: pwsh
