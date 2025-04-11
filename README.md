@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/peteoshea/scripts/workflows/CI/badge.svg)](https://github.com/peteoshea/scripts/actions)
 
-A collection of useful scripts to be installed on new systems to get setup quickly.
+A collection of useful bash scripts to be installed on new systems to get setup quickly. As I mainly work on WSL (Windows Subsystem for Linux) these scripts are designed specifically for that system at the moment.
 
-Based on the my generic [base-template](https://github.com/peteoshea/base-template) repository that includes both PowerShell and bash scripts to manage your development environment.
+Based on the my generic [base-template](https://github.com/peteoshea/base-template) repository, which includes both PowerShell and bash scripts so this has been stripped down and shuold probably have been based on [scripts-to-rule-them-all](https://github.com/peteoshea/scripts-to-rule-them-all).
 
 ## WSL (Windows System for Linux)
 
