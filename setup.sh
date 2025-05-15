@@ -110,7 +110,7 @@ sudo update-alternatives --set editor /usr/bin/vim.basic
 read -rp "Enter your git username: " git_username
 read -rp "Enter your git email: " git_email
 git config --global user.name "$git_username"
-git config --global user.email $git_email
+git config --global user.email "$git_email"
 git config --global core.autocrlf false
 
 # Install Homebrew
@@ -174,7 +174,7 @@ else
     echo "  do"
     echo "    if [[ -r \$bash_addition ]]"
     echo "    then"
-    echo "      source \$bash_addition"
+    echo "      source \"\$bash_addition\""
     echo "    fi"
     echo "  done"
     echo "  unset bash_addition"
@@ -188,7 +188,7 @@ else
     do
       if [[ -r $bash_addition ]]
       then
-        source $bash_addition
+        source "$bash_addition"
       fi
     done
     unset bash_addition
