@@ -188,6 +188,7 @@ else
     do
       if [[ -r $bash_addition ]]
       then
+        # shellcheck disable=SC1090
         source "$bash_addition"
       fi
     done
