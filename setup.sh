@@ -105,13 +105,20 @@ sudo update-alternatives --set editor /usr/bin/vim.basic
 
 # Configue git
 
-# TODO - Check if config item already exists first!
+# TODO - Check if config items already exists first!
 
-read -rp "Enter your git username: " git_username
-read -rp "Enter your git email: " git_email
+read -rp "Enter your name for git on this machine: " git_username
+read -rp "Enter your email for git on this machine: " git_email
 git config --global user.name "$git_username"
-git config --global user.email $git_email
+git config --global user.email "$git_email"
 git config --global core.autocrlf false
+git config --global fetch.prune true
+
+read -rp "Enter GPG signing key: " gpg_key
+git config --global commit.gpgsign true
+git config --global tag.gpgSign true
+git config --global gpg.program "/usr/bin/gpg"
+git config --global user.signingkey "$gpg_key"
 
 # Install Homebrew
 if command -v brew > /dev/null
@@ -174,7 +181,7 @@ else
     echo "  do"
     echo "    if [[ -r \$bash_addition ]]"
     echo "    then"
-    echo "      source \$bash_addition"
+    echo "      source \"\$bash_addition\""
     echo "    fi"
     echo "  done"
     echo "  unset bash_addition"
@@ -188,7 +195,8 @@ else
     do
       if [[ -r $bash_addition ]]
       then
-        source $bash_addition
+        # shellcheck disable=SC1090
+        source "$bash_addition"
       fi
     done
     unset bash_addition
@@ -197,9 +205,3 @@ fi
 
 # TODO
 # git clone git@github.com:peteoshea/scripts.git
-
-read -rp "Enter GPG signing key: " gpg_key
-git config --global commit.gpgsign true
-git config --global tag.gpgSign true
-git config --global gpg.program "/usr/bin/gpg"
-git config --global user.signingkey "$gpg_key"
