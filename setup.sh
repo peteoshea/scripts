@@ -177,10 +177,11 @@ else
     echo "# Personalised additions"
     echo "if [[ -d ~/.bashrc.d ]]"
     echo "then"
-    echo "  for bash_addition in ~/.bashrc.d/*.sh"
+    echo "  for bash_addition in ~/.bashrc.d/*"
     echo "  do"
     echo "    if [[ -r \$bash_addition ]]"
     echo "    then"
+    echo "      echo Applying \"\$bash_addition\""
     echo "      source \"\$bash_addition\""
     echo "    fi"
     echo "  done"
@@ -191,10 +192,11 @@ else
   # Run the additions manually to avoid needing to restart the shell
   if [[ -d ~/dotfiles/.bashrc.d ]]
   then
-    for bash_addition in ~/dotfiles/.bashrc.d/*.sh
+    for bash_addition in ~/dotfiles/.bashrc.d/*
     do
       if [[ -r $bash_addition ]]
       then
+        echo Applying "$bash_addition"
         # shellcheck disable=SC1090
         source "$bash_addition"
       fi
